@@ -4,13 +4,39 @@
 
 using namespace std;
 
-int vertices;
-vector <int> adjMatrix[100002];
-vector <int> maxPathLength(100002,0);//stores the maximum path length among all chidren branches for a node
-vector <int> max2PathLength(100002,0);//stores the second maximum path length among all chidren branches for a node
-vector <bool> visited(100002,false);
+int vertices, edges;
+vector <int> adjMatrix[1000010];
+vector <int> child1PathLength(1000010,0);//stores the maximum path length among all chidren branches for a node
+vector <int> child2PathLength(1000010,0);//stores the second maximum path length among all chidren branches for a node
+vector <int> maxSubtreePathLength(1000010,0);
+vector <int> maxPathLength(1000010,0);
+vector <bool> visited(1000010,false);
+vector <bool> visited2(1000010,false);
 
-int storePathLengths (int vertex)
+int findSubtreePathLength (int vertex)
+{
+    int temp;
+    visited2 [vertex] = true;
+    maxPathLength[vertex] = child1PathLength [vertex] + child2PathLength [vertex];
+    maxSubtreePathLength [vertex] = maxPathLength [vertex];
+
+    for (int iterator1 = 0; iterator1 < adjMatrix [vertex].size(); iterator1 ++)
+    {
+        if (!visited2[adjMatrix [vertex] [iterator1]])
+        {
+            temp = findSubtreePathLength (adjMatrix [vertex] [iterator1]);
+
+            if (temp >= maxSubtreePathLength [vertex])
+            {
+                maxSubtreePathLength [vertex] = temp;
+            }
+        }
+    }
+    
+    return maxSubtreePathLength [vertex];
+}
+
+int storePathLengths (int vertex) //usinf BFS to traverse through all nodes and store pathlengths
 {
     int temp;
     visited [vertex] = true;
@@ -22,40 +48,35 @@ int storePathLengths (int vertex)
             temp = storePathLengths (adjMatrix [vertex] [iterator1]);
             temp ++;
 
-            if (temp >= maxPathLength [vertex])
+            if (temp >= child1PathLength [vertex])
             {
-                max2PathLength [vertex] = maxPathLength [vertex];
-                maxPathLength [vertex] = temp;
+                child2PathLength [vertex] = child1PathLength [vertex];
+                child1PathLength [vertex] = temp;
             }
-            else if (temp > max2PathLength [vertex])
+            else if (temp > child2PathLength [vertex])
             {
-                max2PathLength [vertex] = temp;
+                child2PathLength [vertex] = temp;
             }
         }
     }
     
-    return maxPathLength [vertex];
-    
+    return child1PathLength [vertex];
 }
 
 void queryHandler()
 {
-    int startVertex, iterator1, pathLength, nqueries, queryVertex;
+    int startVertex, iterator, nqueries, queryVertex;
     scanf ("%d", &startVertex);
     
-    int a = storePathLengths (startVertex);
-
-    // printPathLengths();
+    int a = storePathLengths (startVertex); // stores path lengths in child1 and child2
+    int b = findSubtreePathLength (startVertex);
 
     scanf ("%d", &nqueries);
-    
     while (nqueries --)
     {
         scanf ("%d", &queryVertex);
-        pathLength = max2PathLength [queryVertex] + maxPathLength [queryVertex];
-        printf ("%d\n", pathLength);
+        printf ("%d\n", maxSubtreePathLength [queryVertex]);
     }
-
 }
 
 void addEdge (int start, int end)
@@ -66,11 +87,13 @@ void addEdge (int start, int end)
 
 int main()
 {
-    int iterator1, edgeStart, edgeEnd; /*VARIABLES*/
+    int iterator, edgeStart, edgeEnd; /*VARIABLES*/
 
     /******INPUT*****/
     scanf ("%d", &vertices);
-    for (iterator1 = 1; iterator1 < vertices; iterator1 ++)
+    edges = vertices - 1;
+
+    for (iterator = 1; iterator <= edges; iterator ++)
     {
         scanf ("%d %d", &edgeStart, &edgeEnd);
         addEdge (edgeStart, edgeEnd);
